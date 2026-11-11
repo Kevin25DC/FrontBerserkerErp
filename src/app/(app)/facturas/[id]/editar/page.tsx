@@ -123,6 +123,7 @@ export default function EditarFacturaPage({ params }: { params: Promise<{ id: st
           </div>
           {quotasCount === quotas.length ? (
             <>
+              <div className="table-wrap">
               <table className="table">
                 <thead><tr><th>Cuota</th><th>Vencimiento</th><th className="num">Valor</th><th className="num">Abonado</th><th /></tr></thead>
                 <tbody>{quotas.map((q, i) => (
@@ -137,6 +138,7 @@ export default function EditarFacturaPage({ params }: { params: Promise<{ id: st
                   </tr>
                 ))}</tbody>
               </table>
+              </div>
               <p className="small" style={{ marginTop: 10, color: Math.abs(sumQuotas - financed) < 0.01 ? 'var(--muted)' : 'var(--danger)' }}>
                 Las cuotas suman {money(sumQuotas)}; deben sumar exactamente lo financiado: {money(financed)}.
               </p>

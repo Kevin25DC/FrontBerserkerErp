@@ -45,7 +45,7 @@ export function QuoteForm({ quote }: { quote?: QuoteDetail }) {
   return (
     <form onSubmit={submit}>
       <div className="panel">
-        <div className="form-grid" style={{ gridTemplateColumns: '2fr 1fr 1fr' }}>
+        <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <Field label="Cliente"><CustomerPicker value={customer?.name} onPick={(c) => setCustomer({ id: c.id, name: `${c.name} ${c.lastname}` })} /></Field>
           <Field label="Fecha"><input className="input" type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} required /></Field>
           <Field label="Válida hasta" help={quote ? undefined : 'Vacío = 15 días'}><input className="input" type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} /></Field>

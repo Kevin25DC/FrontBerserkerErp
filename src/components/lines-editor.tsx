@@ -19,27 +19,27 @@ export function LinesEditor({ lines, onChange, onlyInStock = false }: { lines: L
   return (
     <div className="panel flush">
       <div className="table-wrap" style={{ overflow: 'visible' }}>
-        <table className="table">
+        <table className="table lines-table">
           <thead>
             <tr><th style={{ width: '45%' }}>Producto</th><th style={{ width: '18%' }}>Precio</th><th style={{ width: '12%' }}>Cant.</th><th className="num">Total</th><th /></tr>
           </thead>
           <tbody>
             {lines.map((l) => (
               <tr key={l.key}>
-                <td>
+                <td className="product">
                   <ItemPicker value={l.name} onlyInStock={onlyInStock}
                     onPick={(it) => update(l.key, { item_id: it.id, name: it.name, price: Math.round(Number(it.price)), stock: it.stock })} />
                   {l.item_id && l.stock !== undefined && l.quantity > l.stock ? (
                     <div className="small" style={{ color: 'var(--warning)', marginTop: 4 }}>Stock actual: {l.stock} · no alcanza</div>
                   ) : null}
                 </td>
-                <td><div className="input-group"><span className="addon">$</span>
+                <td className="price" data-label="Precio"><div className="input-group"><span className="addon">$</span>
                   <input className="input" inputMode="numeric" value={l.price ? l.price.toLocaleString('es-CO') : ''} onChange={(e) => update(l.key, { price: digitsToNumber(e.target.value) })} /></div></td>
-                <td><input className="input" type="number" min={1} value={l.quantity} onChange={(e) => update(l.key, { quantity: Math.max(1, Number(e.target.value) || 1) })} /></td>
-                <td className="num money">{money(l.price * l.quantity)}</td>
-                <td className="num">
+                <td className="qty" data-label="Cantidad"><input className="input" type="number" min={1} value={l.quantity} onChange={(e) => update(l.key, { quantity: Math.max(1, Number(e.target.value) || 1) })} /></td>
+                <td className="num money row-total" data-label="Total">{money(l.price * l.quantity)}</td>
+                <td className="num actions">
                   <button type="button" className="btn btn-icon" title="Quitar" aria-label="Quitar renglón"
-                    onClick={() => onChange(lines.length > 1 ? lines.filter((x) => x.key !== l.key) : [newLine()])}><i className="bi bi-x-lg" /></button>
+                    onClick={() => onChange(lines.length > 1 ? lines.filter((x) => x.key !== l.key) : [newLine()])}><i className="bi bi-x-lg" /> Quitar</button>
                 </td>
               </tr>
             ))}

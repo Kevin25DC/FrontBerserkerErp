@@ -32,7 +32,7 @@ export default function AnularPage() {
   return (
     <>
       <PageHeader title="Anular factura" subtitle="Busca la factura, revisa su detalle y genera el comprobante de anulación." />
-      <div className="grid" style={{ gridTemplateColumns: 'minmax(280px, 380px) 1fr', alignItems: 'start' }}>
+      <div className="grid grid-aside">
         <div className="panel flush">
           <div className="toolbar" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
             <input className="input" placeholder="Cliente, cédula o N° de factura…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -62,10 +62,12 @@ export default function AnularPage() {
                 <div><div className="kpi-label">Total</div><div className="money">{money(inv.total)}</div></div>
                 <div><div className="kpi-label">Método</div><div>{inv.payment_method}</div></div>
               </div>
-              <table className="table">
-                <thead><tr><th>Producto</th><th className="num">Cant.</th><th className="num">Precio</th><th className="num">Subtotal</th></tr></thead>
-                <tbody>{inv.lines.map((l, k) => <tr key={k}><td>{l.name}</td><td className="num">{l.quantity}</td><td className="num">{money(l.price)}</td><td className="num money">{money(l.subtotal)}</td></tr>)}</tbody>
-              </table>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead><tr><th>Producto</th><th className="num">Cant.</th><th className="num">Precio</th><th className="num">Subtotal</th></tr></thead>
+                  <tbody>{inv.lines.map((l, k) => <tr key={k}><td>{l.name}</td><td className="num">{l.quantity}</td><td className="num">{money(l.price)}</td><td className="num money">{money(l.subtotal)}</td></tr>)}</tbody>
+                </table>
+              </div>
               <div style={{ marginTop: 16, display: 'flex', gap: 8 }}>
                 {inv.status === 'Anulada' ? (
                   <>

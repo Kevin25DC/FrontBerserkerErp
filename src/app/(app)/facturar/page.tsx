@@ -183,6 +183,7 @@ function QuotePickerModal({ customerId, onClose, onPick }: { customerId?: number
         <input className="input" style={{ flex: 1 }} placeholder="Buscar por número, cliente o cédula…" value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
         {customerId ? <label className="check"><input type="checkbox" checked={onlyCustomer} onChange={(e) => setOnlyCustomer(e.target.checked)} /> Solo del cliente elegido</label> : null}
       </div>
+      <div className="table-wrap">
       <table className="table">
         <thead><tr><th>No.</th><th>Cliente</th><th>Fecha</th><th>Vence</th><th className="num">Total</th><th /></tr></thead>
         <tbody>
@@ -198,6 +199,7 @@ function QuotePickerModal({ customerId, onClose, onPick }: { customerId?: number
           )) : <tr><td colSpan={6}><Empty icon="bi-file-earmark-text">No hay cotizaciones pendientes.</Empty></td></tr>}
         </tbody>
       </table>
+      </div>
     </Modal>
   );
 }
