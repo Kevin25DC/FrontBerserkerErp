@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { DownloadButton } from '@/components/download-button';
 import { StatusBadge } from '@/components/status-badge';
 import { Empty, Kpi, LoadingRows, PageHeader, Pagination } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -67,7 +68,7 @@ export default function FacturasPage() {
                   </td>
                   <td className="num nowrap">
                     <Link href={`/facturas/${i.id}`} className="btn btn-icon" title="Ver"><i className="bi bi-eye" /></Link>{' '}
-                    <a href={`/api/pdf/invoice/${i.id}`} className="btn btn-icon" title="Descargar PDF"><i className="bi bi-file-earmark-arrow-down" /></a>{' '}
+                    <DownloadButton href={`/api/pdf/invoice/${i.id}`} className="btn btn-icon" title="Descargar PDF" fallbackName={`Factura_${i.invoice_number}.pdf`}><i className="bi bi-file-earmark-arrow-down" /></DownloadButton>{' '}
                     {i.status !== 'Anulada' ? <Link href={`/facturas/${i.id}/editar`} className="btn btn-icon" title="Editar"><i className="bi bi-pencil" /></Link> : null}
                   </td>
                 </tr>

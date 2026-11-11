@@ -3,6 +3,7 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CancelModal } from '@/components/cancel-modal';
+import { DownloadButton } from '@/components/download-button';
 import { useToast } from '@/components/providers';
 import { StatusBadge } from '@/components/status-badge';
 import { Empty, PageHeader, Spinner } from '@/components/ui';
@@ -72,7 +73,7 @@ export default function AnularPage() {
                 {inv.status === 'Anulada' ? (
                   <>
                     <div className="alert danger" style={{ margin: 0, flex: 1 }}>Anulada · {inv.cancel_number} · {inv.cancel_reason}</div>
-                    <a className="btn" href={`/api/pdf/invoice/${inv.id}`}><i className="bi bi-download" /> Comprobante</a>
+                    <DownloadButton href={`/api/pdf/invoice/${inv.id}`} className="btn" loadingLabel="Descargando…" fallbackName={`Comprobante_${inv.invoice_number}.pdf`}><i className="bi bi-download" /> Comprobante</DownloadButton>
                   </>
                 ) : <button className="btn btn-danger" onClick={() => setConfirming(true)}><i className="bi bi-x-octagon" /> Anular factura</button>}
               </div>

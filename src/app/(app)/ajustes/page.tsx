@@ -2,10 +2,11 @@
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { DownloadButton } from '@/components/download-button';
 import { ItemPicker } from '@/components/item-picker';
 import { useToast } from '@/components/providers';
 import { Badge, Empty, Field, LoadingRows, PageHeader, Pagination } from '@/components/ui';
-import { api, download } from '@/lib/api';
+import { api } from '@/lib/api';
 import { datetime, todayISO } from '@/lib/format';
 import type { Adjustment, Item, Page } from '@/lib/types';
 
@@ -61,9 +62,9 @@ export default function AjustesPage() {
             <Field label="Desde"><input className="input" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
             <Field label="Hasta"><input className="input" type="date" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
           </div>
-          <button className="btn" style={{ marginTop: 14 }} onClick={() => download('/exports/inventory-adjustments.xlsx', { date_from: from, date_to: to }).catch((e) => toast.error(e.message))}>
-            <i className="bi bi-file-earmark-excel" /> Excel
-          </button>
+        <DownloadButton className="btn" style={{ marginTop: 14 }} path="/exports/inventory-adjustments.xlsx" query={{ date_from: from, date_to: to }} fallbackName="Ajustes_inventario.xlsx" loadingLabel="Exportando…">
+          <i className="bi bi-file-earmark-excel" /> Excel
+        </DownloadButton>
         </div>
       </div>
       <div className="panel flush">

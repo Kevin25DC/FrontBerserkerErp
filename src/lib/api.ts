@@ -70,4 +70,5 @@ export async function download(path: string, query?: Options['query'], fallbackN
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  return name;
 }

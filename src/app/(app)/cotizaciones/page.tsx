@@ -3,6 +3,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
+import { DownloadButton } from '@/components/download-button';
 import { useToast } from '@/components/providers';
 import { Badge, Empty, LoadingRows, PageHeader, Pagination } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -58,7 +59,7 @@ export default function CotizacionesPage() {
                   <td>{x.invoice_id ? <Link href={`/facturas/${x.invoice_id}`}>#{x.invoice_number}</Link> : '—'}</td>
                   <td className="num nowrap">
                     <Link href={`/cotizaciones/${x.id}`} className="btn btn-icon" title="Ver"><i className="bi bi-eye" /></Link>{' '}
-                    <a href={`/api/pdf/quote/${x.id}`} className="btn btn-icon" title="PDF"><i className="bi bi-file-earmark-arrow-down" /></a>{' '}
+                    <DownloadButton href={`/api/pdf/quote/${x.id}`} className="btn btn-icon" title="PDF" fallbackName={`Cotizacion_${x.code}.pdf`}><i className="bi bi-file-earmark-arrow-down" /></DownloadButton>{' '}
                     {x.status === 'pendiente' ? <>
                       <Link href={`/cotizaciones/${x.id}/editar`} className="btn btn-icon" title="Editar"><i className="bi bi-pencil" /></Link>{' '}
                       <Link href={`/facturar?quote=${x.id}`} className="btn btn-primary btn-sm">Facturar</Link>{' '}

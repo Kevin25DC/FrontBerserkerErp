@@ -2,9 +2,10 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import { DownloadButton } from '@/components/download-button';
 import { useToast } from '@/components/providers';
 import { Modal } from '@/components/ui';
-import { api, download } from '@/lib/api';
+import { api } from '@/lib/api';
 
 type ImportResult = { status: 'success' | 'warning' | 'error'; inserted: number; duplicates: string[]; errors: number; message: string };
 
@@ -31,7 +32,7 @@ export function ImportModal({ kind, onClose, onDone }: { kind: 'customers' | 'it
           onClick={() => { const f = fileRef.current?.files?.[0]; if (f) upload.mutate(f); else toast.error('Selecciona un archivo .xlsx'); }}>
           {upload.isPending ? <span className="spinner" /> : <i className="bi bi-upload" />} Cargar
         </button>
-        <button className="btn" onClick={() => download(`/templates/${kind}.xlsx`, undefined, 'plantilla.xlsx')}><i className="bi bi-download" /> Plantilla</button>
+        <DownloadButton path={`/templates/${kind}.xlsx`} fallbackName="plantilla.xlsx" className="btn" loadingLabel="Descargando…"><i className="bi bi-download" /> Plantilla</DownloadButton>
       </div>
       {result ? (
         <div className={`alert ${result.status === 'success' ? 'info' : result.status === 'warning' ? 'warning' : 'danger'}`} style={{ marginTop: 16, flexDirection: 'column' }}>

@@ -7,6 +7,7 @@ import { Suspense, use, useState } from 'react';
 import { DocPreview } from '@/components/doc-preview';
 import { invoiceDoc } from '@/components/doc-templates';
 import { CancelModal } from '@/components/cancel-modal';
+import { DownloadButton } from '@/components/download-button';
 import { useToast } from '@/components/providers';
 import { Modal, PageHeader, Spinner } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -29,7 +30,7 @@ function InvoiceView({ id }: { id: string }) {
       <PageHeader back={{ href: '/facturas', label: 'Facturas' }} title={`Factura #${inv.invoice_number}`}
         subtitle={`${inv.customer_name} · ${voided ? `Anulada ${inv.cancel_number ?? ''}` : inv.payment_method === 'Credito' ? 'Crédito' : inv.status}`}
         actions={<>
-          <a href={`/api/pdf/invoice/${inv.id}`} className="btn btn-primary"><i className="bi bi-file-earmark-arrow-down" /> Descargar PDF</a>
+          <DownloadButton href={`/api/pdf/invoice/${inv.id}`} className="btn btn-primary" loadingLabel="Descargando…" fallbackName={`Factura_${inv.invoice_number}.pdf`}><i className="bi bi-file-earmark-arrow-down" /> Descargar PDF</DownloadButton>
           <a href={`/api/pdf/invoice/${inv.id}?inline=1`} target="_blank" rel="noreferrer" className="btn"><i className="bi bi-printer" /> Imprimir</a>
           {!voided ? <>
             <button className="btn" onClick={() => setSendOpen(true)}><i className="bi bi-send" /> Enviar</button>

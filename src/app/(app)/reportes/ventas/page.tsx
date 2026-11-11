@@ -3,16 +3,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CompareChart } from '@/components/charts';
-import { useToast } from '@/components/providers';
+import { DownloadButton } from '@/components/download-button';
 import { Field, Kpi, PageHeader, Spinner } from '@/components/ui';
-import { api, download } from '@/lib/api';
+import { api } from '@/lib/api';
 import { date, money, todayISO } from '@/lib/format';
 
 type Report = { labels: string[]; current: string[]; previous: string[]; totals: { current: string; previous: string; difference: string; change_percent: number }; previous_from: string; previous_to: string };
 const PERIODS = [['daily', 'Diario'], ['weekly', 'Semanal'], ['monthly', 'Mensual'], ['yearly', 'Anual']] as const;
 
 export default function VentasReportPage() {
-  const toast = useToast();
   const [from, setFrom] = useState(`${todayISO().slice(0, 4)}-01-01`);
   const [to, setTo] = useState(todayISO());
   const [period, setPeriod] = useState<(typeof PERIODS)[number][0]>('monthly');
@@ -25,7 +24,7 @@ export default function VentasReportPage() {
   return (
     <>
       <PageHeader back={{ href: '/reportes', label: 'Reportes' }} title="Ventas generales" subtitle="Ventas del período elegido comparadas con el período anterior."
-        actions={<button className="btn" onClick={() => download('/reports/sales/export', { date_from: from, date_to: to }).catch((e) => toast.error(e.message))}><i className="bi bi-file-earmark-excel" /> Excel</button>} />
+        actions={<DownloadButton path="/reports/sales/export" query={{ date_from: from, date_to: to }} fallbackName="Reporte_ventas.xlsx" loadingLabel="Exportando…"><i className="bi bi-file-earmark-excel" /> Excel</DownloadButton>} />
       <div className="panel">
         <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', alignItems: 'end' }}>
           <Field label="Desde"><input className="input" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>

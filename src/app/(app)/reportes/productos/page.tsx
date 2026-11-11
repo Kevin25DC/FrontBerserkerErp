@@ -3,16 +3,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CompareChart } from '@/components/charts';
-import { useToast } from '@/components/providers';
+import { DownloadButton } from '@/components/download-button';
 import { Field, Kpi, PageHeader, Spinner } from '@/components/ui';
-import { api, download } from '@/lib/api';
+import { api } from '@/lib/api';
 import { money, todayISO } from '@/lib/format';
 
 type Row = { item_id: number; name: string; quantity: number; total: string; previous_total: string };
 type Report = { top: Row[]; all: Row[]; totals: { current: string; previous: string; change_percent: number } };
 
 export default function ProductosReportPage() {
-  const toast = useToast();
   const [from, setFrom] = useState(`${todayISO().slice(0, 8)}01`);
   const [to, setTo] = useState(todayISO());
   const [top, setTop] = useState(15);
@@ -21,7 +20,7 @@ export default function ProductosReportPage() {
   return (
     <>
       <PageHeader back={{ href: '/reportes', label: 'Reportes' }} title="Ventas por producto" subtitle="Productos más vendidos por valor en el período elegido."
-        actions={<button className="btn" onClick={() => download('/reports/products/export', { date_from: from, date_to: to }).catch((e) => toast.error(e.message))}><i className="bi bi-file-earmark-excel" /> Excel</button>} />
+        actions={<DownloadButton path="/reports/products/export" query={{ date_from: from, date_to: to }} fallbackName="Reporte_productos.xlsx" loadingLabel="Exportando…"><i className="bi bi-file-earmark-excel" /> Excel</DownloadButton>} />
       <div className="panel">
         <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <Field label="Desde"><input className="input" type="date" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>

@@ -212,10 +212,13 @@ table.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .modal-header h3 { font-size: 16px; }
 .modal-body { padding: 20px; overflow-y: auto; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); }
-.toasts { position: fixed; right: 20px; bottom: 20px; z-index: 70; display: flex; flex-direction: column; gap: 8px; }
-.toast { background: var(--ink); color: #fff; padding: 12px 16px; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: flex; gap: 10px; align-items: center; min-width: 260px; max-width: 420px; }
+.toasts { position: fixed; right: 20px; top: calc(var(--topbar-h) + 12px); z-index: 70; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--ink); color: #fff; padding: 12px 16px; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: flex; gap: 10px; align-items: center; min-width: 260px; max-width: 420px; animation: toast-in .2s ease-out; }
 .toast.error { background: #991b1b; }
 .toast.success { background: var(--brand-700); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+.btn.is-loading { pointer-events: none; animation: btn-pulse 1.2s ease-out infinite; }
+@keyframes btn-pulse { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.35); } 70%, 100% { box-shadow: 0 0 0 7px rgba(22,163,74,0); } }
 .spinner { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; display: inline-block; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -260,7 +263,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .modal-footer { padding: 12px 14px; flex-wrap: wrap; }
   .modal-footer .btn { flex: 1 1 120px; }
 
-  .toasts { left: 12px; right: 12px; bottom: 12px; }
+  .toasts { left: 12px; right: 12px; top: calc(var(--topbar-h) + 8px); bottom: auto; }
   .toast { min-width: 0; max-width: none; width: 100%; }
 
   .table-wrap { -webkit-overflow-scrolling: touch; }

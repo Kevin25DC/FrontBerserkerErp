@@ -3,9 +3,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useToast } from '@/components/providers';
+import { DownloadButton } from '@/components/download-button';
 import { Badge, Empty, Kpi, LoadingRows, PageHeader } from '@/components/ui';
-import { api, download } from '@/lib/api';
+import { api } from '@/lib/api';
 import { date, money } from '@/lib/format';
 import { useDebounced } from '@/lib/hooks';
 
@@ -14,7 +14,6 @@ type Report = { rows: Row[]; invoiced: string; collected: string; pending: strin
 const TONE: Record<string, 'success' | 'info' | 'danger' | 'warning'> = { Pagada: 'success', 'Pago Parcial': 'info', Vencida: 'danger', Pendiente: 'warning' };
 
 export default function EstadoCuentaPage() {
-  const toast = useToast();
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
   const search = useDebounced(q);
@@ -27,7 +26,7 @@ export default function EstadoCuentaPage() {
   return (
     <>
       <PageHeader back={{ href: '/reportes', label: 'Reportes' }} title="Estado de cuenta de clientes" subtitle="Facturado, cobrado y saldo pendiente por cliente."
-        actions={<button className="btn" onClick={() => download('/reports/accounts/export', { q: search, status }).catch((e) => toast.error(e.message))}><i className="bi bi-file-earmark-excel" /> Excel</button>} />
+        actions={<DownloadButton path="/reports/accounts/export" query={{ q: search, status }} fallbackName="Estado_de_cuenta.xlsx" loadingLabel="Exportando…"><i className="bi bi-file-earmark-excel" /> Excel</DownloadButton>} />
       <div className="kpi-grid">
         <Kpi icon="bi-receipt" tone="info" label="Total facturado" value={data ? money(data.invoiced) : '…'} />
         <Kpi icon="bi-check2-circle" label="Total cobrado" value={data ? money(data.collected) : '…'} />

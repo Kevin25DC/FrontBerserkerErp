@@ -3,10 +3,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
+import { DownloadButton } from '@/components/download-button';
 import { useToast } from '@/components/providers';
 import { ImportModal } from '@/components/import-modal';
 import { Badge, Empty, LoadingRows, PageHeader, Pagination } from '@/components/ui';
-import { api, download } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useDebounced } from '@/lib/hooks';
 import type { Customer, Page } from '@/lib/types';
 
@@ -40,9 +41,9 @@ export default function ClientesPage() {
         actions={
           <>
             <button className="btn" onClick={() => setImportOpen(true)}><i className="bi bi-upload" /> Importar</button>
-            <button className="btn" onClick={() => download('/exports/customers.xlsx', undefined, 'Clientes.xlsx').catch((e) => toast.error(e.message))}>
+            <DownloadButton path="/exports/customers.xlsx" fallbackName="Clientes.xlsx" loadingLabel="Exportando…">
               <i className="bi bi-download" /> Exportar
-            </button>
+            </DownloadButton>
             <Link href="/clientes/nuevo" className="btn btn-primary"><i className="bi bi-plus-lg" /> Nuevo cliente</Link>
           </>
         }
@@ -69,7 +70,7 @@ export default function ClientesPage() {
                   <td>{c.city}</td>
                   <td>
                     {c.has_pdf
-                      ? <button className="btn btn-sm" onClick={() => download(`/customers/${c.id}/document`, undefined, 'documento.pdf').catch((e) => toast.error(e.message))}><i className="bi bi-file-earmark-pdf" /> Descargar</button>
+                      ? <DownloadButton path={`/customers/${c.id}/document`} fallbackName="documento.pdf" className="btn btn-sm" loadingLabel="Descargando…"><i className="bi bi-file-earmark-pdf" /> Descargar</DownloadButton>
                       : <Badge tone="neutral">Sin PDF</Badge>}
                   </td>
                   <td className="num nowrap">

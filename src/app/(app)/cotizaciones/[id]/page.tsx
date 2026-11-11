@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { use } from 'react';
 import { DocPreview } from '@/components/doc-preview';
+import { DownloadButton } from '@/components/download-button';
 import { quoteDoc } from '@/components/doc-templates';
 import { PageHeader, Spinner } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -19,7 +20,7 @@ export default function CotizacionPage({ params }: { params: Promise<{ id: strin
     <>
       <PageHeader back={{ href: '/cotizaciones', label: 'Cotizaciones' }} title={q.code} subtitle={`${q.customer_name} · ${q.status}`}
         actions={<>
-          <a href={`/api/pdf/quote/${q.id}`} className="btn btn-primary"><i className="bi bi-file-earmark-arrow-down" /> Descargar PDF</a>
+          <DownloadButton href={`/api/pdf/quote/${q.id}`} className="btn btn-primary" loadingLabel="Descargando…" fallbackName={`Cotizacion_${q.code}.pdf`}><i className="bi bi-file-earmark-arrow-down" /> Descargar PDF</DownloadButton>
           {q.status === 'pendiente' ? <>
             <Link href={`/cotizaciones/${q.id}/editar`} className="btn"><i className="bi bi-pencil" /> Editar</Link>
             <Link href={`/facturar?quote=${q.id}`} className="btn"><i className="bi bi-receipt" /> Facturar</Link>
