@@ -18,7 +18,11 @@ async function launch(): Promise<Browser> {
   const puppeteer = (await import('puppeteer-core')).default;
   if (process.env.VERCEL || process.env.AWS_EXECUTION_ENV) {
     const chromium = (await import('@sparticuz/chromium')).default;
-    return puppeteer.launch({ args: chromium.args, executablePath: await chromium.executablePath(), headless: true });
+    return puppeteer.launch({
+      args: await puppeteer.defaultArgs({ args: chromium.args, headless: 'shell' }),
+      executablePath: await chromium.executablePath(),
+      headless: 'shell',
+    });
   }
   return puppeteer.launch({ executablePath: LOCAL_CHROME, headless: true, args: ['--no-sandbox', '--disable-gpu'] });
 }

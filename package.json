@@ -9,12 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@sparticuz/chromium": "131.0.1",
+    "@sparticuz/chromium": "153.0.0",
     "@tanstack/react-query": "5.62.8",
     "bootstrap-icons": "1.11.3",
     "chart.js": "4.4.1",
-    "next": "15.1.6",
-    "puppeteer-core": "23.11.1",
+    "next": "15.5.29",
+    "puppeteer-core": "25.17.0",
     "react": "^19.0.0",
     "react-chartjs-2": "5.3.0",
     "react-dom": "^19.0.0",
@@ -26,7 +26,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.1.6",
+    "eslint-config-next": "15.5.29",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "8.5.32"
+  },
+  "engines": {
+    "node": ">=22.17.0"
   }
 }
