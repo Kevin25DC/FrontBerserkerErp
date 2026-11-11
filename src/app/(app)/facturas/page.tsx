@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { DownloadButton } from '@/components/download-button';
 import { StatusBadge } from '@/components/status-badge';
 import { Empty, Kpi, LoadingRows, PageHeader, Pagination } from '@/components/ui';
@@ -19,11 +19,14 @@ export default function FacturasPage() {
   const [page, setPage] = useState(1);
   const search = useDebounced(q);
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['invoices', search, status],
-    queryFn: () => api<{ items: InvoiceSummary[]; kpis: InvoiceKpis }>('/invoices', { query: { q: search, status } }),
+    // Paginado en el servidor: solo viajan las facturas de la página (los indicadores cubren todo el filtro).
+    queryKey: ['invoices', search, status, page],
+    queryFn: () => api<{ items: InvoiceSummary[]; kpis: InvoiceKpis; total: number }>('/invoices', {
+      query: { q: search, status, page, page_size: PAGE_SIZE },
+    }),
     placeholderData: keepPreviousData,
   });
-  const rows = useMemo(() => (data?.items ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE), [data, page]);
+  const rows = data?.items ?? [];
   const k = data?.kpis;
 
   return (
@@ -76,7 +79,7 @@ export default function FacturasPage() {
             </tbody>
           </table>
         </div>
-        {data ? <Pagination page={page} pageSize={PAGE_SIZE} total={data.items.length} onPage={setPage} /> : null}
+        {data ? <Pagination page={page} pageSize={PAGE_SIZE} total={data.total} onPage={setPage} /> : null}
       </div>
     </>
   );

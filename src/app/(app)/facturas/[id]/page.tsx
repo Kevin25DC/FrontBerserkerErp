@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, use, useState } from 'react';
@@ -59,15 +59,21 @@ function SendModal({ inv, onClose }: { inv: InvoiceDetail; onClose: () => void }
   const toast = useToast();
   const [email, setEmail] = useState(true);
   const [whatsapp, setWhatsapp] = useState(false);
-  const send = useMutation({
-    mutationFn: () => api<{ email: string | null; whatsapp: string | null }>(`/invoices/${inv.id}/send`, { json: { email, whatsapp } }),
-    onSuccess: (r) => { toast.success([r.email && `Correo: ${r.email}`, r.whatsapp && `WhatsApp: ${r.whatsapp}`].filter(Boolean).join(' · ')); onClose(); },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  // El modal se cierra al instante y el envío sigue en segundo plano; el resultado llega como aviso.
+  function send() {
+    if (email && !inv.customer.email) return toast.error('El cliente no tiene correo registrado.');
+    if (whatsapp && !inv.customer.phone) return toast.error('El cliente no tiene teléfono registrado.');
+    const n = inv.invoice_number;
+    onClose();
+    toast.info(`Enviando factura #${n}…`);
+    api<{ email: string | null; whatsapp: string | null }>(`/invoices/${inv.id}/send`, { json: { email, whatsapp } })
+      .then((r) => toast.success(`Factura #${n} · ${[r.email && `Correo: ${r.email}`, r.whatsapp && `WhatsApp: ${r.whatsapp}`].filter(Boolean).join(' · ')}`))
+      .catch((e: Error) => toast.error(`Factura #${n}: ${e.message}`));
+  }
   return (
     <Modal title="Enviar factura" onClose={onClose}
       footer={<><button className="btn" onClick={onClose}>Cancelar</button>
-        <button className="btn btn-primary" disabled={send.isPending || (!email && !whatsapp)} onClick={() => send.mutate()}>{send.isPending ? <span className="spinner" /> : null} Enviar</button></>}>
+        <button className="btn btn-primary" disabled={!email && !whatsapp} onClick={send}><i className="bi bi-send" /> Enviar</button></>}>
       <p className="muted" style={{ marginTop: 0 }}>Cliente: <strong>{inv.customer_name}</strong></p>
       <div style={{ display: 'grid', gap: 10 }}>
         <label className="check"><input type="checkbox" checked={email} onChange={(e) => setEmail(e.target.checked)} /> Correo ({inv.customer.email || 'sin correo'})</label>

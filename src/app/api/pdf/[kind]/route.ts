@@ -15,7 +15,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ kind: string }
     return NextResponse.json({ detail: 'No autorizado.' }, { status: 401 });
   }
   const { kind } = await ctx.params;
-  if (!['invoice', 'quote', 'quota-receipt', 'quota-reversal'].includes(kind)) {
+  if (!['invoice', 'quote', 'purchase', 'quota-receipt', 'quota-reversal'].includes(kind)) {
     return NextResponse.json({ detail: 'Documento desconocido.' }, { status: 404 });
   }
   const payload = { ...(await req.json()), kind } as DocPayload;

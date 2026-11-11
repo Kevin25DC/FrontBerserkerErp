@@ -21,8 +21,9 @@ export default function AnularPage() {
   const [confirming, setConfirming] = useState(false);
   const search = useDebounced(q);
   const { data, isLoading } = useQuery({
-    queryKey: ['invoices', search, status],
-    queryFn: () => api<{ items: InvoiceSummary[] }>('/invoices', { query: { q: search, status } }),
+    queryKey: ['invoices', 'anular', search, status],
+    // Las 50 más recientes del filtro; la búsqueda encuentra cualquier otra.
+    queryFn: () => api<{ items: InvoiceSummary[]; total: number }>('/invoices', { query: { q: search, status, page_size: 50 } }),
     placeholderData: keepPreviousData,
   });
   const { data: inv, isFetching } = useQuery({
@@ -42,7 +43,7 @@ export default function AnularPage() {
             </select>
           </div>
           <div style={{ maxHeight: 'calc(100vh - 300px)', overflowY: 'auto', padding: 6 }}>
-            {isLoading ? <div style={{ padding: 16 }}><Spinner /></div> : data?.items.length ? data.items.slice(0, 300).map((i) => (
+            {isLoading ? <div style={{ padding: 16 }}><Spinner /></div> : data?.items.length ? data.items.map((i) => (
               <button key={i.id} onClick={() => setSelected(i.id)}
                 style={{ display: 'block', width: '100%', textAlign: 'left', border: '1px solid', borderColor: selected === i.id ? 'var(--brand-100)' : 'transparent', background: selected === i.id ? 'var(--brand-50)' : 'none', borderRadius: 8, padding: 10, cursor: 'pointer' }}>
                 <div className="strong">{i.customer_name}</div>
@@ -51,6 +52,9 @@ export default function AnularPage() {
                 </div>
               </button>
             )) : <Empty>No hay facturas con esos filtros.</Empty>}
+            {data && data.total > data.items.length
+              ? <p className="small muted" style={{ textAlign: 'center', margin: '8px 0' }}>Mostrando las {data.items.length} más recientes de {data.total.toLocaleString('es-CO')}. Busca por cliente o número para encontrar otra.</p>
+              : null}
           </div>
         </div>
         <div className="panel">

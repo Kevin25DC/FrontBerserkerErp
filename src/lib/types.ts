@@ -1,3 +1,5 @@
+import type { CustomerIdType } from '@/lib/identification';
+
 /** Tipos de la API (espejo de app/schemas en ../api). Decimales llegan como string. */
 export type Dec = string;
 
@@ -5,10 +7,10 @@ export interface Page<T> { items: T[]; total: number; page: number; page_size: n
 
 export interface User { id: number; username: string; first_name: string; last_name: string; email: string; is_superuser: boolean; last_login: string | null }
 
-export interface Customer { id: number; name: string; lastname: string; cedula: string; phone: string; email: string; address: string; city: string; record_date: string | null; has_pdf: boolean }
+export interface Customer { id: number; id_type: CustomerIdType; name: string; lastname: string; cedula: string; phone: string; email: string; address: string; city: string; record_date: string | null; has_pdf: boolean }
 export type CustomerIn = Omit<Customer, 'id' | 'record_date' | 'has_pdf'>;
 
-export interface Item { id: number; name: string; reference: string | null; description: string | null; price: Dec; stock: number; active: boolean; tax_id: number | null }
+export interface Item { id: number; name: string; reference: string | null; description: string | null; price: Dec; cost: Dec; stock: number; active: boolean; tax_id: number | null }
 
 export interface Tax { id: number; name: string; rate: Dec; is_active: boolean; created_at: string | null }
 
@@ -39,13 +41,49 @@ export interface InvoiceKpis {
 
 export interface QuoteLine { item_id: number; name: string; quantity: number; price: Dec; subtotal: Dec; active: boolean; stock: number }
 export interface Quote {
-  id: number; code: string; number: number; customer_id: number; customer_name: string; customer_cedula: string;
+  id: number; code: string; number: number; customer_id: number; customer_name: string; customer_cedula: string; customer_id_type?: string;
   quote_date: string; valid_until: string | null; discount: Dec; delivery_amount: Dec; subtotal: Dec; total: Dec;
   notes: string | null; customer_phone: string | null; customer_email: string | null; status: 'pendiente' | 'facturada' | 'anulada'; is_expired: boolean; invoice_id: number | null; invoice_number: number | null;
 }
 export interface QuoteDetail extends Quote { lines: QuoteLine[] }
 
 export interface Adjustment { id: number; item_id: number; item_name: string; adjustment_type: 'IN' | 'OUT'; quantity: number; reason: string | null; created_at: string; username: string; stock_before: number | null; stock_after: number | null }
+
+export type IdType = 'NIT' | 'CC' | 'CE' | 'PP' | 'OTRO';
+export interface Supplier {
+  id: number; id_type: IdType; identification: string; dv: string | null; name: string; trade_name: string | null;
+  person_type: 'natural' | 'juridica'; contact_name: string | null; phone: string | null; email: string | null;
+  address: string | null; city: string | null; department: string | null; country: string; payment_terms: string | null;
+  credit_days: number; notes: string | null; active: boolean; created_at: string; updated_at: string; purchase_count: number;
+}
+export type SupplierIn = Omit<Supplier, 'id' | 'created_at' | 'updated_at' | 'purchase_count'>;
+
+export interface PurchaseLineInput { item_id: number; quantity: number; unit_cost: number; discount_pct: number; tax_id: number | null }
+export interface PurchaseLine {
+  item_id: number; name: string; reference: string | null; quantity: number; unit_cost: Dec; discount_pct: Dec;
+  tax_id: number | null; tax_rate: Dec; subtotal: Dec; tax_amount: Dec; total: Dec;
+}
+export type PurchaseStatus = 'borrador' | 'confirmada' | 'anulada';
+export interface PurchaseSummary {
+  id: number; code: string; year: number; number: number; date: string; supplier_id: number; supplier_name: string;
+  supplier_identification: string; supplier_id_type: string; document_type: string; supplier_document: string | null;
+  payment_method: string; payment_terms: string | null; due_date: string | null; status: PurchaseStatus;
+  subtotal: Dec; discount_total: Dec; tax_total: Dec; total: Dec; created_at: string; confirmed_at: string | null; canceled_at: string | null;
+}
+export interface PurchaseDetail extends PurchaseSummary {
+  supplier: Supplier; notes: string | null; cancel_reason: string | null; lines: PurchaseLine[];
+  company_name: string; company_nit: string;
+}
+
+export interface KardexRow {
+  date: string; movement_type: 'IN' | 'OUT'; reference: string; detail: string | null;
+  username: string | null; quantity: number; balance: number;
+}
+export interface KardexSummaryRow {
+  item_id: number; item_name: string; reference: string | null; stock: number;
+  opening: number; entries: number; exits: number; closing: number;
+}
+export interface KardexOut extends KardexSummaryRow { rows: KardexRow[] }
 
 export interface Point { label: string; value: Dec | number }
 export interface Dashboard {

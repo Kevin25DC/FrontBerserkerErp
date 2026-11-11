@@ -1,3 +1,4 @@
+import { idFull, idNumber } from '@/lib/identification';
 /**
  * Plantillas PDF portadas LITERALMENTE del sistema actual (VisualPos/templates):
  *   invoice-cash   ← Invoice/receipt_pdf.html
@@ -11,10 +12,11 @@
  * Diferencias deliberadas: el descuento muestra su valor real (Django imprimía el % como
  * dinero) y las horas van en hora de Colombia (Django las imprimía en UTC).
  */
-import type { InvoiceDetail, Quota, QuoteDetail } from '@/lib/types';
+import type { InvoiceDetail, PurchaseDetail, Quota, QuoteDetail } from '@/lib/types';
 import cashCss from './invoice-cash.css';
 import cancelCss from './invoice-cancel.css';
 import creditCss from './invoice-credit.css';
+import purchaseCss from './purchase.css';
 import quoteCss from './quote.css';
 import receiptCss from './quota-receipt.css';
 import reversalCss from './quota-reversal.css';
@@ -61,7 +63,9 @@ const shapes = (extra = '') => `
 const nitLine = (inv: InvoiceDetail) =>
   `<p class="company-nit" style="font-size:12px;color:#455a64;font-weight:600;margin-top:4px;">${esc(inv.company_name)} &middot; NIT ${esc(inv.company_nit)}</p>`;
 
-const customerName = (inv: InvoiceDetail) => `${inv.customer.name} ${inv.customer.lastname}`;
+const customerName = (inv: InvoiceDetail) => `${inv.customer.name} ${inv.customer.lastname}`.trim();
+/** 'NIT 900123456-7' / 'C.C. 1045737528' (vacío si el cliente no tiene número). */
+const customerId = (inv: InvoiceDetail) => idFull(inv.customer.id_type, inv.customer.cedula);
 
 function topInfo(inv: InvoiceDetail, second: { label: string; value: string }) {
   const delivery = Number(inv.delivery_amount) > 1
@@ -94,7 +98,7 @@ function clientBox(inv: InvoiceDetail, label: string, amount: string | number | 
         <div class="client-info">
           <h3>Factura Para:</h3>
           <div class="client-name">${esc(customerName(inv))}</div>
-          <p></p>
+          <p>${esc(customerId(inv))}</p>
           ${inv.customer.email ? `<p>${esc(inv.customer.email)}</p>` : ''}
           ${inv.customer.phone ? `<p>${esc(inv.customer.phone)}</p>` : ''}
         </div>
@@ -399,6 +403,7 @@ Factura original No. <strong>#${inv.invoice_number}</strong>
 <div class="info-card">
 <h3>Cliente</h3>
 <p>${esc(customerName(inv))}</p>
+${customerId(inv) ? `<p>${esc(customerId(inv))}</p>` : ''}
 </div>
 <div class="info-card">
 <h3>Fecha Factura</h3>
@@ -608,8 +613,8 @@ export function quoteDoc(q: QuoteDetail, company: { name: string; nit: string },
       <div class="block">
         <h3>Cliente</h3>
         <p class="highlight">${esc(q.customer_name)}</p>
-        <h3>Cédula</h3>
-        <p>${esc(q.customer_cedula || '—')}</p>
+        <h3>${q.customer_id_type === 'NIT' ? 'NIT' : 'Identificación'}</h3>
+        <p>${esc(q.customer_cedula ? (q.customer_id_type === 'NIT' ? idNumber('NIT', q.customer_cedula) : idFull(q.customer_id_type, q.customer_cedula)) : '—')}</p>
       </div>
       <div class="block">
         <h3>Contacto</h3>
@@ -654,4 +659,91 @@ export function quoteDoc(q: QuoteDetail, company: { name: string; nit: string },
 export function invoiceDoc(inv: InvoiceDetail, a: Assets): Rendered {
   if (inv.status === 'Anulada') return invoiceCancel(inv, a);
   return inv.payment_method === 'Credito' ? invoiceCredit(inv, a) : invoiceCash(inv, a);
+}
+
+// ---------------------------------------------------------------- compra
+export function purchaseDoc(p: PurchaseDetail, a: Assets): Rendered {
+  const statusLabel = p.status.toUpperCase();
+  const supplierId = `${p.supplier.id_type} ${p.supplier.identification}${p.supplier.dv ? `-${p.supplier.dv}` : ''}`;
+  const rows = p.lines.map((l) => `
+    <tr>
+      <td>${esc(l.reference || '—')}</td>
+      <td>${esc(l.name)}</td>
+      <td class="right">${l.quantity}</td>
+      <td class="right">$${intcomma(l.unit_cost)}</td>
+      <td class="right">${intcomma(l.discount_pct)}%</td>
+      <td class="right">${intcomma(l.tax_rate)}%</td>
+      <td class="right">$${intcomma(l.subtotal)}</td>
+      <td class="right">$${intcomma(l.total)}</td>
+    </tr>`).join('');
+  const discount = Number(p.discount_total) ? `
+    <div class="row"><span>Descuento</span><span>-$${intcomma(p.discount_total)}</span></div>` : '';
+  const body = `
+<div class="page">
+  ${p.status !== 'confirmada' ? `<div class="watermark">${statusLabel}</div>` : ''}
+  <div class="header">
+    <div class="logo"><img src="${a.logo}" alt="Logo"></div>
+    <div class="title">
+      <h1>COMPRA</h1>
+      <div class="code">${esc(p.code)}</div>
+      <span class="status ${p.status}">${statusLabel}</span>
+    </div>
+  </div>
+  <div class="blocks">
+    <div class="block">
+      <h3>Empresa</h3>
+      <p class="strong">${esc(p.company_name)}</p>
+      <p>NIT ${esc(p.company_nit)}</p>
+    </div>
+    <div class="block">
+      <h3>Proveedor</h3>
+      <p class="strong">${esc(p.supplier.name)}</p>
+      <p>${esc(supplierId)}</p>
+      ${p.supplier.address ? `<p>${esc(p.supplier.address)}</p>` : ''}
+      ${p.supplier.city ? `<p>${esc(p.supplier.city)}${p.supplier.department ? `, ${esc(p.supplier.department)}` : ''}</p>` : ''}
+      <p>${esc(p.supplier.phone || '')} ${esc(p.supplier.email || '')}</p>
+    </div>
+    <div class="block">
+      <h3>Documento</h3>
+      <p>Fecha: <b>${djDate(p.date)}</b></p>
+      <p>Tipo: ${esc(p.document_type)}</p>
+      <p>No. proveedor: ${esc(p.supplier_document || '—')}</p>
+      <p>Pago: ${esc(p.payment_method)}${p.payment_terms ? ` · ${esc(p.payment_terms)}` : ''}</p>
+      ${p.due_date ? `<p>Vence: ${djDate(p.due_date)}</p>` : ''}
+    </div>
+  </div>
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Ref.</th>
+        <th>Producto</th>
+        <th class="right">Cant.</th>
+        <th class="right">Costo</th>
+        <th class="right">Desc.</th>
+        <th class="right">IVA</th>
+        <th class="right">Subtotal</th>
+        <th class="right">Total</th>
+      </tr>
+    </thead>
+    <tbody>${rows}
+    </tbody>
+  </table>
+  <div class="bottom">
+    <div class="notes">
+      <h3>Notas</h3>
+      <p>${esc(p.notes || '—').replace(/\n/g, '<br>')}</p>
+    </div>
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>$${intcomma(p.subtotal)}</span></div>${discount}
+      <div class="row"><span>IVA</span><span>$${intcomma(p.tax_total)}</span></div>
+      <div class="row grand"><span>Total</span><span>$${intcomma(p.total)}</span></div>
+    </div>
+  </div>
+  <div class="signatures">
+    <div><span></span><p>Recibido por</p></div>
+    <div><span></span><p>Elaborado por</p></div>
+  </div>
+  <div class="footer">Documento generado por ${esc(p.company_name)} · ${esc(p.code)}</div>
+</div>`;
+  return { css: purchaseCss, body };
 }

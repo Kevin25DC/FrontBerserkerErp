@@ -70,6 +70,57 @@ button { font: inherit; }
 .nav-link.active { background: rgba(22,163,74,.16); color: #fff; }
 .nav-link.active i { color: #4ade80; }
 
+/* Grupos plegables del menú */
+.nav-group { margin: 1px 0; }
+.nav-group-btn { width: 100%; background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit; }
+.nav-group-btn .nav-chevron { margin-left: auto; font-size: 11px; width: auto; color: var(--sidebar-muted); transition: transform .2s ease; }
+.nav-group.open .nav-chevron { transform: rotate(180deg); }
+.nav-group-btn.has-active { color: #fff; }
+.nav-group-btn.has-active > i:first-child { color: #4ade80; }
+.nav-sub { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .2s ease; }
+.nav-group.open .nav-sub { grid-template-rows: 1fr; }
+.nav-sub-inner { overflow: hidden; margin-left: 21px; padding-left: 10px; border-left: 1px solid rgba(255,255,255,.08); }
+.nav-sublink { padding: 7px 10px; font-size: 13.5px; gap: 10px; }
+.nav-sublink i { font-size: 14px; }
+.nav-link:focus-visible { outline: 2px solid #4ade80; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .nav-sub, .nav-chevron { transition: none; } }
+.nav-flyout-title { display: none; }
+
+/* Pie del menú: botón para recoger (solo escritorio) */
+.sidebar-footer { padding: 10px 12px 14px; border-top: 1px solid rgba(255,255,255,.06); }
+.sidebar-collapse-btn { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); cursor: pointer; font-family: inherit; color: var(--sidebar-ink); }
+.sidebar-collapse-btn:hover { background: rgba(255,255,255,.09); }
+.app-sidebar, .app-main { transition: width .2s ease, margin-left .2s ease, transform .2s ease; }
+
+/* Menú recogido: barra de íconos; los grupos se despliegan al lado al pasar el mouse */
+@media (min-width: 992px) {
+  .sidebar-collapsed { --sidebar-w: 72px; }
+  .sidebar-collapsed .sidebar-brand { padding: 0; justify-content: center; }
+  .sidebar-collapsed .sidebar-logo { width: 30px; height: 40px; object-fit: cover; object-position: left center; }
+  .sidebar-collapsed .sidebar-nav { overflow: visible; padding: 12px 10px; }
+  .sidebar-collapsed .sidebar-nav .nav-link { justify-content: center; padding: 10px 0; }
+  .sidebar-collapsed .sidebar-nav .nav-link > span,
+  .sidebar-collapsed .nav-chevron { display: none; }
+  .sidebar-collapsed .sidebar-nav .nav-link > i:first-child { font-size: 18px; width: auto; }
+  .sidebar-collapsed .nav-group { position: relative; }
+  .sidebar-collapsed .nav-sub { display: none; }
+  .sidebar-collapsed .nav-group:hover .nav-sub,
+  .sidebar-collapsed .nav-group:focus-within .nav-sub {
+    display: block; position: absolute; left: 100%; top: 0; z-index: 50; padding-left: 8px;
+  }
+  .sidebar-collapsed .nav-sub-inner {
+    margin: 0; border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius-sm); padding: 6px;
+    min-width: 210px; background: var(--sidebar-bg); box-shadow: var(--shadow-lg);
+  }
+  .sidebar-collapsed .nav-flyout-title { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--sidebar-muted); padding: 6px 10px 4px; }
+  .sidebar-collapsed .nav-sub .nav-link { justify-content: flex-start; padding: 7px 10px; }
+  .sidebar-collapsed .nav-sub .nav-link > span { display: inline; }
+  .sidebar-collapsed .nav-sub .nav-link > i:first-child { font-size: 14px; }
+  .sidebar-collapsed .sidebar-footer { padding: 10px; }
+  .sidebar-collapsed .sidebar-collapse-btn { justify-content: center; padding: 10px 0; }
+  .sidebar-collapsed .sidebar-collapse-btn span { display: none; }
+}
+
 .app-main { margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
 .app-topbar {
   position: sticky; top: 0; z-index: 30; height: var(--topbar-h);
@@ -278,7 +329,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   }
   .lines-table td { display: block; border: 0; padding: 0; }
   .lines-table td.product, .lines-table td.row-total, .lines-table td.actions { grid-column: 1 / -1; }
-  .lines-table td.price::before, .lines-table td.qty::before, .lines-table td.row-total::before {
+  .lines-table td[data-label]::before {
     content: attr(data-label); display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px;
   }
   .lines-table td.row-total { display: flex; justify-content: space-between; align-items: center; padding-top: 8px; border-top: 1px dashed var(--border); }

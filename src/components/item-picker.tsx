@@ -1,5 +1,6 @@
 'use client';
 
+import { idFull } from '@/lib/identification';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { api } from '@/lib/api';
@@ -71,14 +72,14 @@ export function CustomerPicker({ value, onPick }: { value?: string; onPick: (c: 
   });
   return (
     <div ref={ref} style={{ position: 'relative' }}>
-      <input className="input" value={text} placeholder="Buscar cliente por nombre o cédula…" onFocus={() => setOpen(true)}
+      <input className="input" value={text} placeholder="Buscar cliente por nombre o identificación…" onFocus={() => setOpen(true)}
         onChange={(e) => { setText(e.target.value); setOpen(true); }} />
       {open ? (
         <div style={listStyle}>
           {data?.items.map((c) => (
             <button type="button" key={c.id} style={optStyle}
               onMouseDown={(e) => { e.preventDefault(); onPick(c); setText(`${c.name} ${c.lastname}`); setOpen(false); }}>
-              <span><strong>{c.name} {c.lastname}</strong></span><span className="muted small">{c.cedula}</span>
+              <span><strong>{c.name} {c.lastname}</strong></span><span className="muted small">{idFull(c.id_type, c.cedula)}</span>
             </button>
           ))}
           {data && !data.items.length ? <div className="muted small" style={{ padding: 8 }}>Sin resultados</div> : null}

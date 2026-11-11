@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { pdfResponse, renderDocPdf } from '@/lib/render-doc';
 import { API_URL, SESSION_COOKIE } from '@/lib/server';
-import type { InvoiceDetail, QuoteDetail } from '@/lib/types';
+import type { InvoiceDetail, PurchaseDetail, QuoteDetail } from '@/lib/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 30;
@@ -26,6 +26,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ kind: string; i
     if (kind === 'quote') {
       const [quote, company] = await Promise.all([get<QuoteDetail>(`/quotes/${id}`), get<{ name: string; nit: string }>('/company')]);
       const { pdf, filename } = await renderDocPdf({ kind: 'quote', quote, company_name: company.name, company_nit: company.nit });
+      return pdfResponse(pdf, filename, inline);
+    }
+    if (kind === 'purchase') {
+      const purchase = await get<PurchaseDetail>(`/purchases/${id}`);
+      const { pdf, filename } = await renderDocPdf({ kind: 'purchase', purchase });
       return pdfResponse(pdf, filename, inline);
     }
     // Recibo de abono / anulación de pago: /api/pdf/quota-receipt/{quotaId}?invoice=ID&amount=X

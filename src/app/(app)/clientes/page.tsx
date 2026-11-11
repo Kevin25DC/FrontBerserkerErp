@@ -1,5 +1,6 @@
 'use client';
 
+import { idNumber, idTypeShort } from '@/lib/identification';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -51,21 +52,21 @@ export default function ClientesPage() {
 
       <div className="panel flush">
         <div className="toolbar">
-          <input className="input" style={{ maxWidth: 360 }} placeholder="Buscar por nombre, cédula o teléfono…" value={q}
+          <input className="input" style={{ maxWidth: 360 }} placeholder="Buscar por nombre, identificación o teléfono…" value={q}
             onChange={(e) => { setQ(e.target.value); setPage(1); }} aria-label="Buscar clientes" />
           {isFetching ? <span className="spinner muted" /> : null}
         </div>
         <div className="table-wrap">
           <table className="table">
             <thead>
-              <tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Teléfono</th><th>Ciudad</th><th>Documento</th><th className="num">Acciones</th></tr>
+              <tr><th>#</th><th>Identificación</th><th>Nombre</th><th>Teléfono</th><th>Ciudad</th><th>Documento</th><th className="num">Acciones</th></tr>
             </thead>
             <tbody>
               {isLoading ? <LoadingRows cols={7} /> : data?.items.length ? data.items.map((c) => (
                 <tr key={c.id}>
                   <td className="muted">{c.id}</td>
-                  <td className="strong">{c.cedula}</td>
-                  <td>{c.name} {c.lastname}</td>
+                  <td className="nowrap"><span className="muted small">{idTypeShort(c.id_type)}</span> <span className="strong">{idNumber(c.id_type, c.cedula)}</span></td>
+                  <td>{c.id_type === 'NIT' ? <><i className="bi bi-building muted" /> {c.name}</> : `${c.name} ${c.lastname}`}</td>
                   <td>{c.phone}</td>
                   <td>{c.city}</td>
                   <td>

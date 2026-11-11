@@ -2,13 +2,14 @@ import 'server-only';
 
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { invoiceDoc, quotaReceipt, quotaReversal, quoteDoc, type Assets } from '@/components/doc-templates';
+import { invoiceDoc, purchaseDoc, quotaReceipt, quotaReversal, quoteDoc, type Assets } from '@/components/doc-templates';
 import { htmlPage, htmlToPdf } from '@/lib/pdf';
-import type { InvoiceDetail, QuoteDetail } from '@/lib/types';
+import type { InvoiceDetail, PurchaseDetail, QuoteDetail } from '@/lib/types';
 
 export type DocPayload =
   | { kind: 'invoice'; invoice: InvoiceDetail }
   | { kind: 'quote'; quote: QuoteDetail; company_name: string; company_nit: string }
+  | { kind: 'purchase'; purchase: PurchaseDetail }
   | { kind: 'quota-receipt' | 'quota-reversal'; invoice: InvoiceDetail; quota_id: number; amount: string | number; when?: string };
 
 let assets: Assets | null = null;
@@ -33,6 +34,10 @@ export async function renderDocPdf(p: DocPayload): Promise<{ pdf: Uint8Array; fi
     case 'quote':
       doc = quoteDoc(p.quote, { name: p.company_name, nit: p.company_nit }, a);
       filename = `Cotizacion_${p.quote.code}.pdf`;
+      break;
+    case 'purchase':
+      doc = purchaseDoc(p.purchase, a);
+      filename = `Compra_${p.purchase.code}.pdf`;
       break;
     case 'quota-receipt':
       doc = quotaReceipt(p.invoice, p.quota_id, p.amount);
