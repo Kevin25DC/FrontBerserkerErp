@@ -40,11 +40,11 @@ export async function renderDocPdf(p: DocPayload): Promise<{ pdf: Uint8Array; fi
       filename = `Compra_${p.purchase.code}.pdf`;
       break;
     case 'quota-receipt':
-      doc = quotaReceipt(p.invoice, p.quota_id, p.amount);
+      doc = quotaReceipt(p.invoice, p.quota_id, p.amount, a);
       filename = `Recibo_Cuota_${p.quota_id}.pdf`;
       break;
     default:
-      doc = quotaReversal(p.invoice, p.quota_id, p.amount);
+      doc = quotaReversal(p.invoice, p.quota_id, p.amount, a);
       filename = `Anulacion_Cuota_${p.quota_id}.pdf`;
   }
   const pdf = await htmlToPdf(htmlPage(doc.body, doc.css, filename));

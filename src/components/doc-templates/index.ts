@@ -4,8 +4,7 @@ import { idFull, idNumber } from '@/lib/identification';
  *   invoice-cash   ← Invoice/receipt_pdf.html
  *   invoice-credit ← Invoice/receipt_credit_pdf.html
  *   invoice-cancel ← Invoice/receipt_pdf_cancel.html
- *   quota-receipt  ← PaymentQuota/Receipt_ticket.html
- *   quota-reversal ← PaymentQuota/Receipt_ticket_cancel.html
+ *   quota-receipt / quota-reversal: rediseñados (2026-11) con el estilo de la factura a crédito.
  *   quote          ← quote/quote_pdf.html
  * El CSS de cada una es copia exacta (archivos *.css.ts). El marcado conserva las mismas
  * etiquetas, clases y textos; solo cambian las etiquetas de Django por los datos de la API.
@@ -18,8 +17,7 @@ import cancelCss from './invoice-cancel.css';
 import creditCss from './invoice-credit.css';
 import purchaseCss from './purchase.css';
 import quoteCss from './quote.css';
-import receiptCss from './quota-receipt.css';
-import reversalCss from './quota-reversal.css';
+import receiptProCss from './quota-receipt-pro.css';
 
 export type Assets = { logo: string; firma: string };
 export type Rendered = { css: string; body: string };
@@ -477,100 +475,206 @@ ${Number(inv.discount) ? `<div class="total-row">
 }
 
 // ---------------------------------------------------------------- recibo de abono / anulación de pago
-export function quotaReceipt(inv: InvoiceDetail, quotaId: number, amount: string | number): Rendered {
-  const q = inv.quota_list.find((x) => x.id === quotaId)!;
-  const [d, t] = nowDmy();
-  const balance = Number(q.balance) > 0 ? `
-<div class="balance-section">
-<div class="balance-row">
-<span>Valor original de la cuota:</span>
-<span>$${intcomma(q.amount)}</span>
-</div>
-<div class="balance-row">
-<span>Monto pagado:</span>
-<span>$${intcomma(amount)}</span>
-</div>
-<div class="balance-row">
-<span>Saldo pendiente:</span>
-<span>$${intcomma(q.balance)}</span>
-</div>
-</div>` : '';
-  const body = `
-<div class="receipt-container">
-<div class="receipt-header">
-<div class="receipt-icon">✓</div>
-<h1 class="receipt-title">Pago Recibido</h1>
-<p class="receipt-subtitle">Transacción Exitosa</p>
-</div>
-<div class="receipt-body">
-<div class="company-info">
-<div class="company-name">CELUPRO CO</div>
-</div>
-<div class="info-section">
-<div class="info-row"><span class="info-label">Factura:</span><span class="info-value">#${inv.invoice_number}</span></div>
-<div class="info-row"><span class="info-label">Cliente:</span><span class="info-value">${esc(customerName(inv))}</span></div>
-<div class="info-row"><span class="info-label">Cuota:</span><span class="info-value">#${q.id}</span></div>
-<div class="info-row"><span class="info-label">Fecha de pago:</span><span class="info-value">${djDate(q.payment_date)}</span></div>
-<div class="info-row"><span class="info-label">Método de pago:</span><span class="info-value">${esc(inv.payment_method)}</span></div>
-</div>
-<div class="amount-section">
-<div class="amount-label">Monto Pagado</div>
-<div class="amount-value">$${intcomma(amount)}</div>
-</div>${balance}
-<div class="status-section">
-<div class="status-text">
-<span class="status-icon">✅</span>
-${q.is_paid ? 'CUOTA PAGADA COMPLETAMENTE' : 'PAGO PARCIAL REGISTRADO'}
-</div>
-</div>
-<div class="thank-you">
-<p class="thank-you-text">¡Gracias por su pago!</p>
-</div>
-<div class="footer">
-Recibo generado el ${d} a las ${t}
-</div>
-</div>
-</div>`;
-  return { css: receiptCss, body };
+// Mismo lenguaje visual de la factura a crédito (logo, encabezado, cliente, pie) en una sola hoja.
+const money = (v: string | number | null | undefined) => `$${intcomma(v)}`;
+
+function quotaLabel(inv: InvoiceDetail, q: Quota) {
+  const regular = inv.quota_list.filter((x) => x.number > 0).length;
+  return q.number === 0 ? 'Cuota inicial' : `Cuota ${q.number} de ${regular}`;
 }
 
-export function quotaReversal(inv: InvoiceDetail, quotaId: number, amount: string | number, reversedAt: string | Date = new Date()): Rendered {
-  const q = inv.quota_list.find((x) => x.id === quotaId)!;
-  const [d, t] = nowDmy();
-  const body = `
-<div class="receipt-container">
-<div class="receipt-header">
-<div class="receipt-icon">✕</div>
-<h1 class="receipt-title">Anulación de Cuota</h1>
-<p class="receipt-subtitle">Comprobante de reversa</p>
+/** Estado del crédito después del movimiento: cuotas pagadas, saldo y próxima cuota. */
+function creditStatus(inv: InvoiceDetail) {
+  const regular = [...inv.quota_list].filter((x) => x.number > 0).sort((x, y) => x.number - y.number);
+  const paid = regular.filter((x) => x.is_paid).length;
+  const pending = regular.reduce((t, x) => t + Number(x.balance), 0);
+  const next = regular.find((x) => !x.is_paid);
+  const pct = regular.length ? Math.round((paid / regular.length) * 100) : 0;
+  return `
+      <div class="credit-info-box">
+        <div class="credit-info-title">📋 Estado del crédito · Factura #${inv.invoice_number}</div>
+        <div class="credit-info-grid">
+          <div class="credit-info-item">
+            <div class="credit-info-label">Total financiado</div>
+            <div class="credit-info-value">${money(inv.total_financed ?? inv.total)}</div>
+          </div>
+          <div class="credit-info-item">
+            <div class="credit-info-label">Cuotas pagadas</div>
+            <div class="credit-info-value">${paid} de ${regular.length}</div>
+            <div class="progress"><span style="width:${pct}%"></span></div>
+          </div>
+          <div class="credit-info-item">
+            <div class="credit-info-label">Saldo pendiente</div>
+            <div class="credit-info-value ${pending > 0 ? 'warn' : 'ok'}">${money(pending)}</div>
+          </div>
+          <div class="credit-info-item">
+            <div class="credit-info-label">Próxima cuota</div>
+            <div class="credit-info-value">${next ? `${esc(djDate(next.payment_date))}` : '<span class="ok">Crédito al día ✓</span>'}</div>
+            ${next ? `<div style="font-size:10px;color:#666;margin-top:2px;">${quotaLabel(inv, next)} · ${money(next.balance)}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+}
+
+function receiptPage(inv: InvoiceDetail, a: Assets, o: {
+  variant: 'paid' | 'partial' | 'reversal'; ribbon: string; title: string; number: string; badge: string;
+  dateLabel: string; dateValue: string; boxLabel: string; amount: string | number; table: string; stamp: string;
+  note: string; footerTitle: string; footerLines: string[];
+}) {
+  const total = Number(o.amount);
+  return `
+<div class="invoice-wrapper">${shapes()}
+<div class="credit-ribbon receipt-ribbon ${o.variant}">${o.ribbon}</div>
+${header(inv, a, o.title, o.number, `<span class="credit-badge ${o.variant}">${o.badge}</span>`)}
+<div class="invoice-body">
+      <div class="top-info-grid">
+        <div class="info-block">
+          <h3>${o.dateLabel}</h3>
+          <p class="highlight">${esc(o.dateValue)}</p>
+          <h3 style="margin-top: 15px;">Factura</h3>
+          <p>No. # ${inv.invoice_number} · ${esc(djDate(inv.date))}</p>
+        </div>
+        <div class="info-block">
+          <h3>Dirección:</h3>
+          <p>Barranquilla, Colombia</p>
+          <h3 style="margin-top: 15px;">Modalidad</h3>
+          <p>Crédito · ${esc(inv.payment_frequency ?? '')}</p>
+        </div>
+        <div class="info-block">
+          <h3>Teléfono:</h3>
+          <p>+57 3005034055</p>
+          <h3 style="margin-top: 15px;">Email:</h3>
+          <p>info@celuproco.com.co</p>
+        </div>
+      </div>
+      <div class="client-total-section">
+        <div class="client-info">
+          <h3>${o.variant === 'reversal' ? 'Cliente:' : 'Recibido de:'}</h3>
+          <div class="client-name">${esc(customerName(inv))}</div>
+          <p>${esc(customerId(inv))}</p>
+          ${inv.customer.email ? `<p>${esc(inv.customer.email)}</p>` : ''}
+          ${inv.customer.phone ? `<p>${esc(inv.customer.phone)}</p>` : ''}
+        </div>
+        <div class="total-due-box ${o.variant === 'reversal' ? 'reversal' : ''}">
+          <div class="total-due-label">${o.boxLabel}</div>
+          <div class="total-due-amount">${money(total)}</div>
+        </div>
+      </div>
+      <div class="receipt-section-title">Detalle del movimiento</div>
+      ${o.table}
+      ${creditStatus(inv)}
+      <div class="totals-area">
+        <div class="thank-you-section">
+          <div class="receipt-stamp ${o.variant}">${o.stamp}</div>
+          <p class="receipt-note">${o.note}</p>
+          <div class="signature-area">
+            <div class="signature-line"><img src="${a.firma}" alt="Firma"></div>
+            <div class="signature-name">GERENTE GENERAL</div>
+            <div class="signature-title">Gerente</div>
+          </div>
+        </div>
+      </div>
 </div>
-<div class="receipt-body">
-<div class="company-info">
-<div class="company-name">CELUPRO CO</div>
+<div class="invoice-footer">
+<div class="footer-section">
+<h4>💳 Información de Contacto</h4>
+<p><strong>CELUPRO CO</strong> · NIT ${esc(inv.company_nit)}</p>
+<p>Teléfono: <strong>+57 3005034055</strong></p>
+<p>Email: <strong>info@celuproco.com.co</strong></p>
+<p>Web: <strong>https://celuproco.com.co/</strong></p>
 </div>
-<div class="info-section">
-<div class="info-row"><span class="info-label">Factura:</span><span class="info-value">#${inv.invoice_number}</span></div>
-<div class="info-row"><span class="info-label">Cliente:</span><span class="info-value">${esc(customerName(inv))}</span></div>
-<div class="info-row"><span class="info-label">Cuota:</span><span class="info-value">#${q.id}</span></div>
-<div class="info-row"><span class="info-label">Vencimiento:</span><span class="info-value">${djDate(q.payment_date)}</span></div>
-<div class="info-row"><span class="info-label">Fecha de anulación:</span><span class="info-value">${dmyHm(reversedAt)}</span></div>
-</div>
-<div class="amount-section">
-<div class="amount-label">Monto reversado</div>
-<div class="amount-value">$${intcomma(amount)}</div>
-</div>
-<div class="status-section">
-<div class="status-text">La cuota quedó en estado: PENDIENTE</div>
-</div>
-<div class="thank-you">
-<p class="thank-you-text">Conserve este comprobante para soporte.</p>
-</div>
-<div class="footer">
-Comprobante generado el ${d} a las ${t}
+<div class="footer-section">
+<h4>${o.footerTitle}</h4>
+${o.footerLines.map((l) => `<p>${l}</p>`).join('\n')}
 </div>
 </div>
 </div>`;
-  return { css: reversalCss, body };
+}
+
+export function quotaReceipt(inv: InvoiceDetail, quotaId: number, amount: string | number, a: Assets): Rendered {
+  const q = inv.quota_list.find((x) => x.id === quotaId)!;
+  const paidNow = Number(amount);
+  const before = Math.max(Number(q.amount) - Number(q.balance) - paidNow, 0);
+  const [d, t] = nowDmy();
+  const full = q.is_paid;
+  // Fecha real del último abono (sirve también al reimprimir el recibo días después).
+  const last = [...(q.payments ?? [])].sort((x, y) => x.date.localeCompare(y.date)).at(-1);
+  const table = `
+      <table class="receipt-table">
+        <thead><tr><th>Concepto</th><th>Vencimiento</th><th>Valor cuota</th><th>Abonos anteriores</th><th>Este pago</th><th>Saldo cuota</th></tr></thead>
+        <tbody>
+          <tr class="this-payment">
+            <td>${quotaLabel(inv, q)}<span class="sub">Pago a factura #${inv.invoice_number} · ${esc(inv.payment_method)}</span></td>
+            <td>${esc(djDate(q.payment_date))}</td>
+            <td>${money(q.amount)}</td>
+            <td>${money(before)}</td>
+            <td>${money(paidNow)}</td>
+            <td>${money(q.balance)}</td>
+          </tr>
+        </tbody>
+      </table>`;
+  const body = receiptPage(inv, a, {
+    variant: full ? 'paid' : 'partial',
+    ribbon: full ? 'PAGADO' : 'ABONO',
+    title: 'RECIBO DE PAGO',
+    number: `NO. # RC-${q.id} · FACTURA #${inv.invoice_number}`,
+    badge: full ? 'CUOTA PAGADA' : 'ABONO PARCIAL',
+    dateLabel: 'Fecha del pago',
+    dateValue: last ? dmyHm(last.date) : `${d} ${t}`,
+    boxLabel: 'Valor recibido',
+    amount,
+    table,
+    stamp: full ? '✓ Cuota pagada' : '◐ Abono registrado',
+    note: full
+      ? `Recibimos el pago completo de la ${quotaLabel(inv, q).toLowerCase()}. ¡Gracias por su puntualidad!`
+      : `Recibimos un abono a la ${quotaLabel(inv, q).toLowerCase()}. Queda un saldo de <strong>${money(q.balance)}</strong> en esta cuota.`,
+    footerTitle: '📋 Constancia de Pago',
+    footerLines: [
+      'Este documento certifica el pago recibido por CELUPRO CO.',
+      'Conserve este recibo como soporte de su pago.',
+      `Generado el ${d} a las ${t}.`,
+    ],
+  });
+  return { css: creditCss + receiptProCss, body };
+}
+
+export function quotaReversal(inv: InvoiceDetail, quotaId: number, amount: string | number, a: Assets, reversedAt: string | Date = new Date()): Rendered {
+  const q = inv.quota_list.find((x) => x.id === quotaId)!;
+  const [d, t] = nowDmy();
+  const table = `
+      <table class="receipt-table">
+        <thead><tr><th>Concepto</th><th>Vencimiento</th><th>Valor cuota</th><th>Valor anulado</th><th>Saldo cuota</th></tr></thead>
+        <tbody>
+          <tr class="this-payment reversal">
+            <td>${quotaLabel(inv, q)}<span class="sub">Anulación de pagos · factura #${inv.invoice_number}</span></td>
+            <td>${esc(djDate(q.payment_date))}</td>
+            <td>${money(q.amount)}</td>
+            <td>-${money(amount)}</td>
+            <td>${money(q.balance)}</td>
+          </tr>
+        </tbody>
+      </table>`;
+  const body = receiptPage(inv, a, {
+    variant: 'reversal',
+    ribbon: 'ANULADO',
+    title: 'ANULACIÓN DE PAGO',
+    number: `NO. # AN-${q.id} · FACTURA #${inv.invoice_number}`,
+    badge: 'PAGO ANULADO',
+    dateLabel: 'Fecha de anulación',
+    dateValue: dmyHm(reversedAt),
+    boxLabel: 'Valor anulado',
+    amount,
+    table,
+    stamp: '✕ Cuota pendiente',
+    note: `Se anularon los pagos de la ${quotaLabel(inv, q).toLowerCase()}; la cuota vuelve a quedar pendiente por <strong>${money(q.balance)}</strong>.`,
+    footerTitle: '⚠️ Importante',
+    footerLines: [
+      'Este comprobante soporta la anulación del pago registrado.',
+      'Si no reconoce este movimiento, contáctenos de inmediato.',
+      `Generado el ${d} a las ${t}.`,
+    ],
+  });
+  return { css: creditCss + receiptProCss, body };
 }
 
 // ---------------------------------------------------------------- cotización
