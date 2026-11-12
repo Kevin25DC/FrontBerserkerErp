@@ -12,12 +12,22 @@ import type { QuotaPage, QuotaRow } from '@/lib/types';
 
 const PAGE_SIZE = 50;
 
+type ToastApi = ReturnType<typeof useToast>;
+
 /** Aviso de la API sobre el correo al cliente: verde si salió, rojo si falló, azul si no aplica. */
-function noticeToast(toast: ReturnType<typeof useToast>, notice?: string | null) {
+function noticeToast(toast: ToastApi, notice?: string | null) {
   if (!notice) return;
   if (notice.startsWith('Correo enviado')) toast.success(notice);
   else if (notice.includes('falló')) toast.error(notice);
   else toast.info(notice);
+}
+
+/** El pago ya quedó registrado; el correo (PDF + SMTP) va aparte para no hacer esperar al cajero. */
+function sendEmail(toast: ToastApi, quotaId: number, body: { kind: 'receipt' | 'reversal'; amount?: string }) {
+  toast.info('Enviando comprobante por correo…');
+  api<{ notice: string }>(`/quotas/${quotaId}/notify`, { json: body })
+    .then((r) => noticeToast(toast, r.notice))
+    .catch((e: Error) => toast.error(`El pago quedó registrado, pero el correo no salió: ${e.message}`));
 }
 
 /** Abre el PDF del recibo en otra pestaña (igual que el sistema actual: el recibo sale al pagar). */
@@ -41,8 +51,8 @@ export function QuotaList({ title, subtitle, byInvoice }: { title: string; subti
   });
   const invalidate = () => ['quotas', 'invoices', 'invoice', 'dashboard'].forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
   const reverse = useMutation({
-    mutationFn: (q: QuotaRow) => api<{ reversed_amount: string; notice?: string | null }>(`/quotas/${q.id}/reverse`, { method: 'POST' }),
-    onSuccess: (r, q) => { toast.success('Pago anulado: la cuota volvió a pendiente.'); noticeToast(toast, r.notice); invalidate(); openReceipt('quota-reversal', q, r.reversed_amount); },
+    mutationFn: (q: QuotaRow) => api<{ reversed_amount: string }>(`/quotas/${q.id}/reverse`, { method: 'POST', query: { notify: false } }),
+    onSuccess: (r, q) => { toast.success('Pago anulado: la cuota volvió a pendiente.'); sendEmail(toast, q.id, { kind: 'reversal', amount: r.reversed_amount }); invalidate(); openReceipt('quota-reversal', q, r.reversed_amount); },
     onError: (e: Error) => toast.error(e.message),
   });
   const c = data?.counters;
@@ -114,8 +124,8 @@ function PayModal({ quota, onClose, onDone }: { quota: QuotaRow; onClose: () => 
   const toast = useToast();
   const [amount, setAmount] = useState(Math.round(Number(quota.balance)));
   const pay = useMutation({
-    mutationFn: () => api<{ is_paid: boolean; balance: string; notice?: string | null }>(`/quotas/${quota.id}/pay`, { json: { amount } }),
-    onSuccess: (r) => { toast.success(r.is_paid ? 'Cuota pagada completamente.' : `Abono registrado. Saldo: ${money(r.balance)}`); noticeToast(toast, r.notice); onDone(amount); },
+    mutationFn: () => api<{ is_paid: boolean; balance: string }>(`/quotas/${quota.id}/pay`, { json: { amount }, query: { notify: false } }),
+    onSuccess: (r) => { toast.success(r.is_paid ? 'Cuota pagada completamente.' : `Abono registrado. Saldo: ${money(r.balance)}`); sendEmail(toast, quota.id, { kind: 'receipt' }); onDone(amount); },
     onError: (e: Error) => toast.error(e.message),
   });
   return (
